@@ -39,3 +39,9 @@ hl.bind("XF86PowerOff", hl.dsp.global("caelestia:lock"))
 hl.on("hyprland.start", function()
     hl.exec_cmd("systemd-inhibit --what=handle-power-key --who=Hyprland --why='Power button locks the screen' --mode=block sleep infinity")
 end)
+
+-- wallfx: wallpaper transitions (outline / pixel colonies) + skewed-card picker
+hl.on("hyprland.start", function()
+    hl.exec_cmd("qs -c wallfx -n -d")
+end)
+hl.bind("SUPER + SHIFT + W", hl.dsp.global("wallfx:picker"))

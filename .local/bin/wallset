@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# wallset IMAGE — change the wallpaper with the wallfx transition.
+#   character in the image -> its outline is drawn first, then the world grows out of it
+#   no character            -> pixel colonies eat the old wallpaper
+# Caelestia does the actual switch underneath (and re-themes the bar/terminal/apps from it).
+# Flow adapted from pocket-dots' set-wallpaper.sh (diegoMalagrida, GPL-3.0).
+set -uo pipefail
+
+IMG="${1:-}"
+[ -n "$IMG" ] && [ -f "$IMG" ] || { echo "usage: wallset IMAGE" >&2; exit 1; }
+IMG="$(realpath -- "$IMG")"
+
+# One change at a time: picking quickly twice must not interleave two changes.
+if exec 9>"${XDG_RUNTIME_DIR:-/tmp}/wallset.lock" 2>/dev/null; then flock 9; fi
+
+OLD="$(cat "$HOME/.local/state/caelestia/wallpaper/path.txt" 2>/dev/null)"
+[ "$OLD" = "$IMG" ] && exit 0
+
+# Which transition, and its maps + colours. A brand-new wallpaper gets its character cut out
+# right here (a few seconds, with a notification); prepared ones answer instantly.
+choice=""
+[ -x "$HOME/.local/bin/wallfx" ] && choice="$("$HOME/.local/bin/wallfx" elige "$IMG" 2>/dev/null 9>&-)"
+
+ok=""
+if [ -n "$OLD" ] && [ -f "$OLD" ] && [ -n "$choice" ]; then
+    read -r kind map line ember ink <<<"$choice"
+    [ "$(qs -c wallfx ipc call wallfx play "$OLD" "$IMG" "$kind" "$map" "${line:-$map}" "${ember:-#ffa040}" "${ink:-#ffffff}" 2>/dev/null)" = ok ] && ok=1
+fi
+# No transition available (shell not running, no maps): just switch.
+[ -n "$ok" ] || caelestia wallpaper -f "$IMG" >/dev/null 2>&1
+
+# Prepare cut-outs for wallpapers nobody has seen yet, for next time (low priority).
+[ -x "$HOME/.local/bin/wallfx" ] && nice -n 15 "$HOME/.local/bin/wallfx" warm >/dev/null 2>&1 9>&- &
+exit 0

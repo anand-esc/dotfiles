@@ -21,6 +21,9 @@ LINKS=(
     .local/bin/yt
     .local/bin/power-mode-watch
     .local/share/caelestia-github-tab
+    .config/quickshell/wallfx
+    .local/bin/wallfx
+    .local/bin/wallset
 )
 
 if [[ ${1:-} == --packages ]]; then
