@@ -45,3 +45,8 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("qs -c wallfx -n -d")
 end)
 hl.bind("SUPER + SHIFT + W", hl.dsp.global("wallfx:picker"))
+
+-- Keep the screen awake while any window is fullscreen (videos, movies, games).
+-- Apps' own "keep awake" requests go to org.freedesktop.ScreenSaver, which nothing
+-- answers on Hyprland, so the screen could dim/lock mid-video without this.
+hl.window_rule({ match = { class = ".*" }, idle_inhibit = "fullscreen" })
