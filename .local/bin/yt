@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# yt — YouTube in the terminal: search with yt-dlp, pick in fzf (sixel thumbnails in foot), play in mpv.
+#
+#   yt                 prompt for a search
+#   yt lofi hip hop    search directly
+#   yt <url>           play a URL directly
+#   yt -a <query>      audio-only mode (Enter plays audio in the terminal)
+#
+# Keys in the list:
+#   Enter   play video (mpv window; list stays open)
+#   Alt-a   play audio only, in the terminal (q to return)
+#   Alt-d   download video to ~/Videos/YouTube
+#   Ctrl-y  copy video link
+#   Ctrl-s  new search
+#   Esc     quit
+set -euo pipefail
+
+RESULTS=${YT_RESULTS:-25}
+THUMBS="${XDG_CACHE_HOME:-$HOME/.cache}/yt-thumbs"
+DL_DIR="${YT_DOWNLOAD_DIR:-$HOME/Videos/YouTube}"
+SELF=$(readlink -f "$0")
+mkdir -p "$THUMBS"
+
+human() { # 1234567 -> 1.2M
+    [[ $1 =~ ^[0-9]+$ ]] || { echo "-"; return; }
+    numfmt --to=si --format='%.1f' "$1" 2>/dev/null | sed 's/\.0\([A-Z]\)$/\1/'
+}
+
+search() {
+    yt-dlp "ytsearch${RESULTS}:$1" --flat-playlist --no-warnings \
+        --print "%(id)s	%(title)s	%(channel)s	%(duration_string)s	%(view_count)s" 2>/dev/null |
+        while IFS=$'\t' read -r id title channel dur views; do
+            [[ $dur == NA ]] && dur="LIVE"
+            printf '%s\t%s\t%s\t%s\t%s\n' "$id" "$title" "$channel" "$dur" "$(human "$views")"
+        done
+}
+
+preview() { # id title channel duration views
+    local id=$1 thumb="$THUMBS/$1.jpg"
+    [[ -s $thumb ]] || curl -fsSL --max-time 8 -o "$thumb" "https://i.ytimg.com/vi/$id/mqdefault.jpg" 2>/dev/null || true
+    if [[ -s $thumb ]]; then
+        chafa --format=sixels --animate=off -s "${FZF_PREVIEW_COLUMNS:-60}x$(( ${FZF_PREVIEW_LINES:-30} * 2 / 3 ))" "$thumb" 2>/dev/null
+    fi
+    printf '\n\033[1m%s\033[0m\n\n' "$2"
+    printf '  \033[36m%s\033[0m\n  ⏱  %s    👁  %s views\n\n  https://youtu.be/%s\n' "$3" "$4" "$5" "$id"
+}
+
+play_video() { setsid -f mpv --really-quiet "https://www.youtube.com/watch?v=$1" >/dev/null 2>&1; }
+play_audio() { clear; printf '♪ %s\n  (space pause · ←/→ seek · 9/0 volume · q back)\n\n' "$2"; mpv --no-video --keep-open=no --term-osd-bar "https://www.youtube.com/watch?v=$1" || true; }
+download() {
+    mkdir -p "$DL_DIR"
+    setsid -f yt-dlp -q -f "bestvideo[height<=?1440]+bestaudio/best" --embed-metadata \
+        -o "$DL_DIR/%(title)s [%(id)s].%(ext)s" "https://www.youtube.com/watch?v=$1" >/dev/null 2>&1
+    notify-send -a yt "Downloading" "$2" 2>/dev/null || true
+}
+
+pick() {
+    local query=$1 audio=$2 enter
+    if [[ $audio == 1 ]]; then enter="execute($SELF --audio {1} {2})"; else enter="execute-silent($SELF --video {1})"; fi
+    printf 'Searching YouTube for "%s"…\n' "$query" >&2
+    local results; results=$(search "$query")
+    [[ -n $results ]] || { echo "No results (or yt-dlp needs updating)." >&2; return 1; }
+    printf '%s\n' "$results" | fzf \
+        --delimiter=$'\t' --with-nth=2,3,4 --nth=1,2 \
+        --prompt="▶ $query  " --header="Enter play · Alt-a audio · Alt-d download · Ctrl-y copy link · Ctrl-s search" \
+        --preview="$SELF --preview {1} {2} {3} {4} {5}" --preview-window='right,48%,border-left' \
+        --bind="enter:$enter" \
+        --bind="alt-a:execute($SELF --audio {1} {2})" \
+        --bind="alt-d:execute-silent($SELF --download {1} {2})" \
+        --bind="ctrl-y:execute-silent(printf 'https://youtu.be/%s' {1} | wl-copy)" \
+        --bind="ctrl-s:become($SELF $( [[ $audio == 1 ]] && echo -a ))" \
+        --ansi --layout=reverse --height=100% || true
+}
+
+case "${1:-}" in
+    --preview) shift; preview "$@"; exit ;;
+    --video) play_video "$2"; exit ;;
+    --audio) play_audio "$2" "${3:-}"; exit ;;
+    --download) download "$2" "${3:-}"; exit ;;
+    -h | --help) sed -n '2,18p' "$SELF" | sed 's/^# \{0,1\}//'; exit ;;
+esac
+
+audio=0
+[[ ${1:-} == -a ]] && { audio=1; shift; }
+query="$*"
+
+if [[ $query =~ ^https?:// ]]; then
+    if [[ $audio == 1 ]]; then exec mpv --no-video "$query"; else exec mpv "$query"; fi
+fi
+if [[ -z $query ]]; then
+    read -rep $'\033[1;31m▶\033[0m Search YouTube: ' query
+    [[ -n $query ]] || exit 0
+fi
+pick "$query" "$audio"

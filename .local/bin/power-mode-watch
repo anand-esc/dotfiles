@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# Power automation, started by Hyprland (see ~/.config/caelestia/hypr-user.lua).
+#
+# 1. Charger plugged/unplugged -> power profile
+#      plugged in : performance
+#      on battery : balanced
+#    Only acts on plug/unplug, so a profile you pick manually sticks until the next change.
+#
+# 2. Power profile -> refresh rate
+#      power-saver           : 60 Hz
+#      balanced / performance: 90 Hz
+#    Resolution and scale are never changed.
+set -u
+AC=/sys/class/power_supply/ACAD/online
+MON="eDP-1"; RES="2880x1800"; SCALE="1.25"
+
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/power-mode-watch.lock"
+flock -n 9 || exit 0  # already running
+trap 'trap - TERM; kill 0' EXIT INT TERM  # stop the background listeners with us
+
+set_refresh() {
+    local want=90 cur
+    [[ $(powerprofilesctl get) == power-saver ]] && want=60
+    cur=$(hyprctl monitors -j | python3 -I -c "import json,sys; print(round(next(m['refreshRate'] for m in json.load(sys.stdin) if m['name']=='$MON')))" 2>/dev/null)
+    [[ $cur == "$want" ]] ||
+        hyprctl eval "hl.monitor({output=\"$MON\", mode=\"$RES@$want\", position=\"auto\", scale=$SCALE})" >/dev/null
+}
+
+set_profile_for_ac() {
+    if [[ $(cat "$AC") == 1 ]]; then
+        powerprofilesctl set performance
+    else
+        powerprofilesctl set balanced
+    fi
+}
+
+# Profile watcher (background; fd 9 closed so it never holds the lock)
+{
+    stdbuf -oL gdbus monitor --system --dest org.freedesktop.UPower.PowerProfiles 2>/dev/null |
+        while read -r line; do
+            [[ $line == *ActiveProfile* ]] && set_refresh
+        done
+} 9>&- &
+
+# Charger watcher (background too, so the main shell can `wait` and react to signals)
+last=$(cat "$AC")
+set_profile_for_ac
+set_refresh
+{
+    udevadm monitor --udev --subsystem-match=power_supply 2>/dev/null | while read -r _; do
+        now=$(cat "$AC")
+        [[ $now != "$last" ]] || continue
+        last=$now
+        sleep 1  # let the hardware settle
+        set_profile_for_ac
+    done
+} 9>&- &
+
+wait

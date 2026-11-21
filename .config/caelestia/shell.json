@@ -1,0 +1,130 @@
+{
+    "appearance": {
+        "transparency": {
+            "enabled": true,
+            "base": 0.55,
+            "layers": 0.35
+        }
+    },
+    "bar": {
+        "activeWindow": {
+            "compact": false,
+            "inverted": false
+        },
+        "clock": {
+            "background": true,
+            "showDate": true,
+            "showSeconds": false
+        },
+        "dragThreshold": 20,
+        "showOnHover": true,
+        "tray": {
+            "background": false,
+            "recolour": false
+        },
+        "workspaces": {
+            "maxWindowIcons": 5
+        },
+        "entries": [
+            {
+                "id": "logo",
+                "enabled": true
+            },
+            {
+                "id": "workspaces",
+                "enabled": true
+            },
+            {
+                "id": "spacer",
+                "enabled": true
+            },
+            {
+                "id": "activeWindow",
+                "enabled": true
+            },
+            {
+                "id": "spacer",
+                "enabled": true
+            },
+            {
+                "id": "tray",
+                "enabled": true
+            },
+            {
+                "id": "clock",
+                "enabled": true
+            },
+            {
+                "id": "nightLight",
+                "enabled": true
+            },
+            {
+                "id": "statusIcons",
+                "enabled": true
+            },
+            {
+                "id": "power",
+                "enabled": true
+            }
+        ]
+    },
+    "dashboard": {
+        "showClockSeconds": true
+    },
+    "services": {
+        "maxVolume": 1.05
+    },
+    "sidebar": {
+        "dragThreshold": 75
+    },
+    "utilities": {
+        "cards": {
+            "keepAwake": true
+        },
+        "quickToggles": [
+            {
+                "enabled": true,
+                "id": "wifi"
+            },
+            {
+                "enabled": true,
+                "id": "bluetooth"
+            },
+            {
+                "enabled": true,
+                "id": "mic"
+            },
+            {
+                "enabled": true,
+                "id": "settings"
+            },
+            {
+                "enabled": true,
+                "id": "gameMode"
+            },
+            {
+                "enabled": true,
+                "id": "dnd"
+            },
+            {
+                "enabled": false,
+                "id": "vpn"
+            }
+        ]
+    },
+    "session": {
+        "commands": {
+            "logout": [
+                "hyprshutdown",
+                "--post-cmd",
+                "loginctl terminate-user $USER"
+            ]
+        }
+    },
+    "general": {
+        "logo": "/usr/share/pixmaps/archlinux-logo.svg"
+    },
+    "lock": {
+        "enableFprint": false
+    }
+}

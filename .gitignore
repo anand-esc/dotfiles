@@ -1,0 +1,9 @@
+*.bak
+*.bak-*
+*.orig
+.config/fish/fish_variables
+__pycache__/
+
+# Personal art collections stay local (~/.local/share/surfetch/arts/<collection>/)
+surfetch/arts/*/
+private/
