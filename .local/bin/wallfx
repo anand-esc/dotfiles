@@ -248,6 +248,48 @@ def _cutout(im):
     return remove(im, session=_session, only_mask=True)
 
 
+_person_session = None
+
+
+def _person_agreement(im, b):
+    """How much of the cut-out a PERSON model also calls a person (0..1). BiRefNet
+    finds the main subject, which can be a road, a building or a wave; this asks a
+    second model trained only on people whether that subject is someone."""
+    global _person_session
+    import numpy as np
+    from rembg import new_session, remove
+    from PIL import Image
+    if _person_session is None:
+        _person_session = new_session("u2net_human_seg", providers=["CPUExecutionProvider"])
+    small = im.copy(); small.thumbnail((640, 640))
+    hm = np.asarray(remove(small, session=_person_session, only_mask=True).convert("L")) > 127
+    bm = np.asarray(Image.fromarray(b * 255).resize(small.size)) > 127
+    return float((hm & bm).sum() / max(bm.sum(), 1))
+
+
+def _closeup_shape(b):
+    """A close-up of a character (a face filling much of the frame) that the person
+    model misses: one solid blob covering 30-62 % of the picture that barely touches
+    its edges. Roads and landscapes spill off the edges; abstract bands are ragged."""
+    import cv2
+    import numpy as np
+    cover = float(b.mean())
+    cs, _ = cv2.findContours(b, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    area = sum(cv2.contourArea(c) for c in cs)
+    hull = sum(cv2.contourArea(cv2.convexHull(c)) for c in cs)
+    solid = area / hull if hull else 0.0
+    border = float(np.concatenate([b[0], b[-1], b[:, 0], b[:, -1]]).mean())
+    return 0.30 <= cover <= 0.62 and solid >= 0.73 and border <= 0.25
+
+
+def _listed(name, fname):
+    try:
+        with open(os.path.join(HOME, ".config", "wallfx", fname)) as f:
+            return name in {l.strip() for l in f if l.strip() and not l.startswith("#")}
+    except OSError:
+        return False
+
+
 def perfil(img, force=False):
     """(map, line) for IMG, or None when it has no clear character."""
     d = os.path.join(CACHE, "perfil")
@@ -304,7 +346,14 @@ def perfil(img, force=False):
     # not almost all of it (Charizard: the model calls the whole poster
     # "foreground") nor a crumb, and that the model is sure about.
     ok = 0.008 <= cover <= 0.72 and unsure <= 0.06
-    meta = {"img": img, "ok": ok, "cover": round(cover, 3), "unsure": round(unsure, 3), "w": w, "h": h}
+    # ...and that it is actually a character: a person model agrees, or it has the
+    # shape of a close-up. ~/.config/wallfx/outline forces the outline.
+    agree = _person_agreement(im, b) if ok else 0.0
+    closeup = _closeup_shape(b) if ok else False
+    forced = _listed(os.path.basename(img), "outline")
+    ok = forced or (ok and (agree >= 0.30 or closeup))
+    meta = {"img": img, "ok": ok, "cover": round(cover, 3), "unsure": round(unsure, 3), "w": w, "h": h,
+            "person": round(agree, 3), "closeup": closeup, "forced": forced}
     if not ok:
         json.dump(meta, open(meta_path, "w"))
         return None
@@ -431,6 +480,29 @@ def colours(img):
     return ember, ink
 
 
+def write_index(folder=WALLS):
+    """~/.cache/wallfx/kinds.json: which transition each wallpaper gets, for the
+    picker's badges. outline | colonies | pending (not prepared yet)."""
+    exts = (".jpg", ".jpeg", ".png", ".webp")
+    no_outline = sin_perfil()
+    kinds = {}
+    for name in sorted(os.listdir(folder)):
+        path = os.path.join(folder, name)
+        if not (name.lower().endswith(exts) and os.path.isfile(path)):
+            continue
+        if name in no_outline:
+            kinds[name] = "colonies"; continue
+        try:
+            meta = json.load(open(os.path.join(CACHE, "perfil", _key(path) + ".json")))
+            kinds[name] = "outline" if meta.get("ok") else "colonies"
+        except (OSError, ValueError):
+            kinds[name] = "pending"
+    os.makedirs(CACHE, exist_ok=True)
+    tmp = os.path.join(CACHE, f"kinds.json.{os.getpid()}.tmp")
+    json.dump(kinds, open(tmp, "w"))
+    os.replace(tmp, os.path.join(CACHE, "kinds.json"))
+
+
 def warm(folder):
     import fcntl
     os.makedirs(CACHE, exist_ok=True)
@@ -465,6 +537,7 @@ def warm(folder):
     # another pass until the folder stands still. Failures are not cached, so a
     # half-written file is simply tried again on the next pass.
     seen = None
+    write_index(folder)
     for _ in range(6):
         now = listing()
         if now == seen:
@@ -475,6 +548,7 @@ def warm(folder):
                 print(("perfil  " if r else "contagio") + "  " + name, flush=True)
             except Exception as e:                       # one bad file must not stop the rest
                 print(f"error     {name}: {e}", file=sys.stderr, flush=True)
+            write_index(folder)
         seen = now
 
 
@@ -495,6 +569,9 @@ def main(argv):
         if not r:
             return 1
         print(*r)
+        return 0
+    if cmd == "index":
+        write_index(rest[0] if rest else WALLS)
         return 0
     if cmd == "warm":
         warm(rest[0] if rest else WALLS)
@@ -558,7 +635,7 @@ def main(argv):
         # onnxruntime-openvino IS onnxruntime plus the Intel GPU; plain
         # onnxruntime would be CPU only (3x slower here).
         subprocess.run([uv, "pip", "install", "-q", "--python", VENV_PY, "rembg", "onnxruntime-openvino",
-                        "opencv-python-headless", "numpy", "pillow"], check=True)
+                        "opencv-python-headless<5", "numpy", "pillow"], check=True)
         print(tr("listo. `wallfx warm` recorta tus fondos (la primera vez baja el modelo, ~210 MB)",
                  "done. `wallfx warm` cuts out your wallpapers (the first run downloads the model, ~210 MB)",
                  "fatto. `wallfx warm` ritaglia i tuoi sfondi (la prima volta scarica il modello, ~210 MB)"))

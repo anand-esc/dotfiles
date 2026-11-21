@@ -21,7 +21,7 @@ Type = Package
 Target = caelestia-shell
 
 [Action]
-Description = Re-adding local Caelestia additions (GitHub tab, night light)...
+Description = Re-adding local Caelestia additions (GitHub tab, night light, wallfx)...
 When = PostTransaction
 Exec = /usr/bin/python3 -I $DEST/apply.py
 EOF

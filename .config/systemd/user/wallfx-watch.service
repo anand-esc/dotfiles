@@ -1,0 +1,13 @@
+[Unit]
+Description=Prepare wallfx transitions for new wallpapers (thumbnails + character cut-outs)
+
+[Service]
+Type=oneshot
+Nice=15
+# give a download a moment to finish writing
+ExecStartPre=/usr/bin/sleep 3
+ExecStart=/usr/bin/bash %h/.config/quickshell/wallfx/scripts/wall-thumbs.sh
+ExecStart=%h/.local/bin/wallfx warm
+# catch anything added/removed while this was running
+ExecStartPost=/usr/bin/bash %h/.config/quickshell/wallfx/scripts/wall-thumbs.sh
+ExecStartPost=%h/.local/bin/wallfx index

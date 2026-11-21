@@ -78,8 +78,37 @@ def apply_nightlight():
     print("caelestia-nightlight: night light pill added")
 
 
+# wallfx: every wallpaper change made in Caelestia's UI (launcher, settings) goes
+# through Wallpapers.setWallpaper; send it through ~/.local/bin/wallset so it gets
+# the outline / pixel-colony transition. Falls back to the plain switch without it.
+WALL = os.path.join(SHELL, "services", "Wallpapers.qml")
+WALL_ANCHOR = '        Quickshell.execDetached(["caelestia", "wallpaper", "-f", path, ...smartArg]);'
+WALL_ENTRY = ('        Quickshell.execDetached(["sh", "-c", \'w="$HOME/.local/bin/wallset"; [ -x "$w" ] && exec "$w" "$1"; '
+              'shift; exec caelestia wallpaper -f "$@"\', "sh", path, path, ...smartArg]); // caelestia-wallfx')
+
+
+def apply_wallfx():
+    if not os.path.isfile(WALL):
+        warn("Wallpapers.qml not found, skipping wallfx")
+        return
+    src = open(WALL).read()
+    if "caelestia-wallfx" in src:
+        print("caelestia-wallfx: already applied")
+        return
+    if src.count(WALL_ANCHOR) != 1:
+        warn("Wallpapers.qml changed upstream; wallfx transitions NOT hooked in. Update apply.py.")
+        return
+    tmp = WALL + ".wfx-tmp"
+    with open(tmp, "w") as f:
+        f.write(src.replace(WALL_ANCHOR, WALL_ENTRY))
+    shutil.copymode(WALL, tmp)
+    os.replace(tmp, WALL)
+    print("caelestia-wallfx: launcher/settings wallpaper changes now use the transitions")
+
+
 def main():
     apply_nightlight()
+    apply_wallfx()
     if not os.path.isfile(CONTENT):
         warn(f"{CONTENT} not found, skipping")
         return

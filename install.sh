@@ -24,6 +24,8 @@ LINKS=(
     .config/quickshell/wallfx
     .local/bin/wallfx
     .local/bin/wallset
+    .config/systemd/user/wallfx-watch.path
+    .config/systemd/user/wallfx-watch.service
 )
 
 if [[ ${1:-} == --packages ]]; then

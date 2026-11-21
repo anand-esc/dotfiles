@@ -19,7 +19,7 @@ Monochrome theme, translucent bars, a local GitHub dashboard, and a few quality-
 | `.local/bin/power-mode-watch` | Charger → power profile (performance/balanced); Power Saver → 60 Hz |
 | `.local/share/caelestia-github-tab` | Caelestia add-ons: **GitHub dashboard tab** (profile, contributions, repos, notifications) and **night-light bar pill** (hyprsunset). Re-applied automatically after Caelestia updates by a pacman hook |
 | `surfetch/` | **surfetch**: my own fetch tool in Go (~3× faster than fastfetch). Random original anime ASCII art, info block matched to the art's height, add your own art from text or images (`surfetch --add pic.png`), pick one with `surfetch --change`. `surfetch NAME` shows a random art from your own private collection folder `~/.local/share/surfetch/arts/NAME/` (add with `--add pic.png --to NAME`). Built by `install.sh` |
-| `.config/quickshell/wallfx`, `.local/bin/wallfx`, `.local/bin/wallset` | **Wallpaper transitions + picker**, adapted from [pocket-dots](https://github.com/diegoMalagrida/pocket-dots) by diegoMalagrida (**GPL-3.0**, see the folder's LICENSE). A wallpaper with a character: a thin line draws its outline, then the world grows out of it; without one: pixel colonies eat the old one. Characters are cut out once with BiRefNet (rembg, Intel GPU via OpenVINO) and cached. Picker: **Super+Shift+W** (skewed coverflow). Setup: `wallfx install` then `wallfx warm` |
+| `.config/quickshell/wallfx`, `.local/bin/wallfx`, `.local/bin/wallset` | **Wallpaper transitions + picker**, adapted from [pocket-dots](https://github.com/diegoMalagrida/pocket-dots) by diegoMalagrida (**GPL-3.0**, see the folder's LICENSE). A wallpaper with a character: a thin line draws its outline, then the world grows out of it; without one: pixel colonies eat the old one. Characters are cut out once with BiRefNet (rembg; Intel GPU via OpenVINO, needs `intel-compute-runtime`, else CPU), double-checked with a person model so roads and landscapes get colonies, and cached. Picker: **Super+Shift+W** (skewed coverflow, opens on the current wallpaper, badges show each one's effect). A systemd path unit prepares new files dropped in `~/Pictures/Wallpapers`; the Caelestia patcher routes the launcher's wallpaper switcher through it too. Force a choice in `~/.config/wallfx/outline` or `no-outline`. Setup: `wallfx install`, `systemctl --user enable --now wallfx-watch.path` |
 | `sddm/` | SDDM login screen: [sddm-astronaut-theme](https://github.com/Keyitdev/sddm-astronaut-theme) `jake_the_dog`, with the video AI-upscaled to 2880×1800 (Real-ESRGAN) |
 | `system/` | One-off system scripts from setting up this laptop (hardware tuning, EndeavourOS → Arch branding, GRUB rename, locale fix). **Machine-specific; read before running** |
 | `packages/` | `pacman.txt` (official repos) and `aur.txt` |
@@ -38,7 +38,7 @@ Because the configs are symlinks, edits you make are already in the repo. Just c
 Optional (sudo):
 
 ```fish
-sudo bash ~/dotfiles/.local/share/caelestia-github-tab/install.sh   # GitHub tab + night light
+sudo bash ~/dotfiles/.local/share/caelestia-github-tab/install.sh   # GitHub tab, night light, wallfx in launcher
 sudo bash ~/dotfiles/sddm/install.sh                                # login screen (next boot)
 ```
 
@@ -63,4 +63,4 @@ git add -A; and git commit -m "update"; and git push
 
 ## Credits
 
-[Caelestia](https://github.com/caelestia-dots) · [sddm-astronaut-theme](https://github.com/Keyitdev/sddm-astronaut-theme) (GPL-3.0) · [Hyprland](https://hyprland.org)
+[Caelestia](https://github.com/caelestia-dots) · [pocket-dots](https://github.com/diegoMalagrida/pocket-dots) (GPL-3.0) · [sddm-astronaut-theme](https://github.com/Keyitdev/sddm-astronaut-theme) (GPL-3.0) · [Hyprland](https://hyprland.org)

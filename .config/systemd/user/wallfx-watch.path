@@ -1,0 +1,9 @@
+[Unit]
+Description=Prepare wallfx transitions when wallpapers are added
+
+[Path]
+PathChanged=%h/Pictures/Wallpapers
+Unit=wallfx-watch.service
+
+[Install]
+WantedBy=default.target

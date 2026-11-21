@@ -43,6 +43,31 @@ Scope {
     IpcHandler { target: "picker"; function toggle(): string { root.open = !root.open; return root.open ? "open" : "closed" } }
     HyprlandFocusGrab { windows: [win]; active: root.open; onCleared: root.open = false }
 
+    // Which transition each wallpaper gets (wallfx writes it), and which one is on now.
+    property var kinds: ({})
+    property string currentName: ""
+    FileView {
+        path: root.home + "/.cache/wallfx/kinds.json"
+        watchChanges: true; printErrors: false
+        onFileChanged: reload()
+        onLoaded: { try { root.kinds = JSON.parse(text()) } catch (e) {} }
+    }
+    FileView {
+        path: root.home + "/.local/state/caelestia/wallpaper/path.txt"
+        watchChanges: true; printErrors: false
+        onFileChanged: reload()
+        onLoaded: root.currentName = text().trim().split("/").pop()
+    }
+    function centreOnCurrent() {
+        for (let i = 0; i < wallModel.count; i++) {
+            if (String(wallModel.get(i, "fileName")) === root.currentName + ".jpg") {
+                carousel.currentIndex = i
+                carousel.positionViewAtIndex(i, ListView.Center)
+                return
+            }
+        }
+    }
+
     FolderListModel {
         id: wallModel
         folder: "file://" + root.thumbsDir
@@ -74,6 +99,7 @@ Scope {
                 function onOpenChanged() {
                     if (!root.open) return
                     stage.forceActiveFocus()
+                    root.centreOnCurrent()
                     root.refreshThumbs()
                     root.warmTransitions()
                 }
@@ -125,6 +151,12 @@ Scope {
 
                 delegate: Item {
                     id: slot
+                    required property int index
+                    required property string fileName
+                    required property url fileUrl
+                    readonly property string original: String(fileName).replace(/\.jpg$/, "")
+                    readonly property bool isCurrent: original === root.currentName
+                    readonly property string kind: root.kinds[original] ?? "pending"
                     width: carousel.slotW
                     height: carousel.height
                     readonly property real d: (x + width / 2 - (carousel.contentX + carousel.width / 2)) / carousel.slotW
@@ -147,8 +179,8 @@ Scope {
                         Rectangle {
                             anchors.fill: parent
                             color: "#101010"
-                            border.width: 1
-                            border.color: Qt.rgba(1, 1, 1, slot.ad < 0.5 ? 0.55 : 0.15)
+                            border.width: slot.isCurrent ? 3 : 1
+                            border.color: slot.isCurrent ? "#ffffff" : Qt.rgba(1, 1, 1, slot.ad < 0.5 ? 0.55 : 0.15)
                         }
                         Item {
                             anchors.fill: parent; anchors.margins: carousel.bw; clip: true
@@ -157,7 +189,7 @@ Scope {
                                 width: carousel.imgW
                                 height: carousel.ih
                                 fillMode: Image.PreserveAspectCrop
-                                source: model.fileUrl
+                                source: slot.fileUrl
                                 asynchronous: true; cache: true; mipmap: true
                                 sourceSize: Qt.size(carousel.imgW, carousel.ih)
                                 transform: Matrix4x4 { matrix: Qt.matrix4x4(1, -carousel.skew, 0, carousel.skew * carousel.ih / 2, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1) }
@@ -166,10 +198,27 @@ Scope {
                         MouseArea {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: slot.ad < 0.5 ? carousel.applyCurrent() : (carousel.currentIndex = index)
+                            onClicked: slot.ad < 0.5 ? carousel.applyCurrent() : (carousel.currentIndex = slot.index)
+                        }
+
+                        // Badges: which effect this wallpaper gets, and the one that is on now.
+                        Row {
+                            anchors { left: parent.left; bottom: parent.bottom; leftMargin: 26; bottomMargin: 18 }
+                            spacing: 8
+                            Badge {
+                                text: slot.kind === "outline" ? "✎ outline" : slot.kind === "colonies" ? "▦ colonies" : "… preparing"
+                            }
+                            Badge { visible: slot.isCurrent; text: "● current"; strong: true }
                         }
                     }
                 }
+            }
+
+            // ←/→ hint under the carousel
+            Text {
+                anchors { horizontalCenter: parent.horizontalCenter; top: carousel.bottom; topMargin: -40 }
+                text: "← →  browse     ⏎  apply     esc  close"
+                color: "white"; opacity: 0.6; font.pixelSize: 15
             }
 
             Text {
@@ -180,6 +229,22 @@ Scope {
                 font.pixelSize: 22
                 opacity: 0.85
             }
+        }
+    }
+
+    component Badge: Rectangle {
+        property alias text: label.text
+        property bool strong: false
+        radius: height / 2
+        height: label.implicitHeight + 10
+        width: label.implicitWidth + 22
+        color: strong ? "#ffffff" : Qt.rgba(0, 0, 0, 0.62)
+        border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.35)
+        Text {
+            id: label
+            anchors.centerIn: parent
+            color: parent.strong ? "#000000" : "#ffffff"
+            font.pixelSize: 17; font.weight: Font.DemiBold
         }
     }
 }
