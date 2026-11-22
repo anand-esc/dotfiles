@@ -5,6 +5,16 @@ if status is-interactive
     # a universal variable; this sets it once.
     contains no-query-term $fish_features; or set -Ua fish_features no-query-term
     set -g fish_handle_reflow 1
+    # If the window is resized while fish is still starting (Hyprland tiling it), the
+    # first prompt was drawn at the old width and leaves a stray copy above. Until the
+    # first command runs, a resize wipes the screen and redraws the prompt at the top.
+    function __startup_resize --on-signal WINCH
+        printf '\e[H\e[2J'
+        commandline -f repaint
+    end
+    function __startup_resize_done --on-event fish_preexec
+        functions -e __startup_resize __startup_resize_done
+    end
 
     # Starship custom prompt
     command -v starship &> /dev/null && starship init fish | source
