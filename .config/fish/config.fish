@@ -1,4 +1,11 @@
 if status is-interactive
+    # Clean startup: no stray characters typed in (fish's terminal queries sometimes
+    # leak their replies as input in foot) and no doubled prompt when Hyprland resizes
+    # the new window into its tile. The feature flag is read at startup, so it must be
+    # a universal variable; this sets it once.
+    contains no-query-term $fish_features; or set -Ua fish_features no-query-term
+    set -g fish_handle_reflow 1
+
     # Starship custom prompt
     command -v starship &> /dev/null && starship init fish | source
 
