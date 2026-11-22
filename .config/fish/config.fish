@@ -7,9 +7,17 @@ if status is-interactive
     set -g fish_handle_reflow 1
     # If the window is resized while fish is still starting (Hyprland tiling it), the
     # first prompt was drawn at the old width and leaves a stray copy above. Until the
-    # first command runs, a resize wipes the screen and redraws the prompt at the top.
+    # first command runs, a resize wipes the screen and redraws the greeting + prompt.
     function __startup_resize --on-signal WINCH
-        printf '\e[H\e[2J'
+        # before the greeting: it will be drawn at the new size anyway
+        set -q __greeted; or return
+        # mid-greeting: let the greeting redraw itself when it's done
+        if set -q __greeting_busy
+            set -g __greeting_redo 1
+            return
+        end
+        printf '\e[H\e[2J\e[3J'
+        fish_greeting
         commandline -f repaint
     end
     function __startup_resize_done --on-event fish_preexec

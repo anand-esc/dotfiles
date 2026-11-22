@@ -24,6 +24,7 @@ LINKS=(
     .config/quickshell/wallfx
     .local/bin/wallfx
     .local/bin/wallset
+    .local/bin/namebanner
     .config/systemd/user/wallfx-watch.path
     .config/systemd/user/wallfx-watch.service
 )
