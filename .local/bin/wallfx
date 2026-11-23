@@ -267,6 +267,44 @@ def _person_agreement(im, b):
     return float((hm & bm).sum() / max(bm.sum(), 1))
 
 
+# Anime/manga person detector (deepghs/anime_person_detection v1.3_s, MIT). The person
+# model above is trained on photos and misses drawn characters; this one is trained on
+# anime and manga. Downloaded once (43 MB) and checked against this hash.
+ANIME_URL = ("https://huggingface.co/deepghs/anime_person_detection/resolve/main/"
+             "person_detect_v1.3_s/model.onnx")
+ANIME_SHA256 = "6da88929438cd442e31e45ff4f934dd2d7eb9cf7a423c22885d650ee52550f90"
+_anime_session = None
+
+
+def _anime_person(im):
+    """Highest confidence (0..1) that a drawn person is in the picture."""
+    global _anime_session
+    import hashlib
+    import numpy as np
+    import onnxruntime as ort
+    from PIL import Image
+    if _anime_session is None:
+        path = os.path.join(VENV, "models", "anime_person", "model.onnx")
+        if not os.path.exists(path):
+            import urllib.request
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            tmp = path + ".part"
+            urllib.request.urlretrieve(ANIME_URL, tmp)
+            if hashlib.sha256(open(tmp, "rb").read()).hexdigest() != ANIME_SHA256:
+                os.remove(tmp)
+                raise RuntimeError("anime person model: checksum mismatch")
+            os.replace(tmp, path)
+        _anime_session = ort.InferenceSession(path, providers=["CPUExecutionProvider"])
+    size = 640
+    small = im.copy(); small.thumbnail((size, size))
+    canvas = Image.new("RGB", (size, size), (114, 114, 114)); canvas.paste(small, (0, 0))
+    x = np.asarray(canvas, dtype=np.float32).transpose(2, 0, 1)[None] / 255.0
+    out = _anime_session.run(None, {"images": x})[0][0]
+    if out.shape[0] < out.shape[1]:
+        out = out.T
+    return float(out[:, 4].max()) if out.size else 0.0
+
+
 def _closeup_shape(b):
     """A close-up of a character (a face filling much of the frame) that the person
     model misses: one solid blob covering 30-62 % of the picture that barely touches
@@ -346,14 +384,15 @@ def perfil(img, force=False):
     # not almost all of it (Charizard: the model calls the whole poster
     # "foreground") nor a crumb, and that the model is sure about.
     ok = 0.008 <= cover <= 0.72 and unsure <= 0.06
-    # ...and that it is actually a character: a person model agrees, or it has the
+    # ...and that it is actually a character: the anime or the person model agrees, or it has the
     # shape of a close-up. ~/.config/wallfx/outline forces the outline.
     agree = _person_agreement(im, b) if ok else 0.0
+    anime = _anime_person(im) if ok else 0.0
     closeup = _closeup_shape(b) if ok else False
     forced = _listed(os.path.basename(img), "outline")
-    ok = forced or (ok and (agree >= 0.30 or closeup))
+    ok = forced or (ok and (anime >= 0.5 or agree >= 0.30 or closeup))
     meta = {"img": img, "ok": ok, "cover": round(cover, 3), "unsure": round(unsure, 3), "w": w, "h": h,
-            "person": round(agree, 3), "closeup": closeup, "forced": forced}
+            "person": round(agree, 3), "anime": round(anime, 3), "closeup": closeup, "forced": forced}
     if not ok:
         json.dump(meta, open(meta_path, "w"))
         return None
