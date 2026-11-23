@@ -49,7 +49,7 @@ play_video() { setsid -f mpv --really-quiet "https://www.youtube.com/watch?v=$1"
 play_audio() { clear; printf '♪ %s\n  (space pause · ←/→ seek · 9/0 volume · q back)\n\n' "$2"; mpv --no-video --keep-open=no --term-osd-bar "https://www.youtube.com/watch?v=$1" || true; }
 download() {
     mkdir -p "$DL_DIR"
-    setsid -f yt-dlp -q -f "bestvideo[height<=?1440]+bestaudio/best" --embed-metadata \
+    setsid -f yt-dlp -q -f "bestvideo[height<=?2160][fps<=?60][dynamic_range^=HDR]+bestaudio/bestvideo[height<=?2160][fps<=?60]+bestaudio/best" --embed-metadata \
         -o "$DL_DIR/%(title)s [%(id)s].%(ext)s" "https://www.youtube.com/watch?v=$1" >/dev/null 2>&1
     notify-send -a yt "Downloading" "$2" 2>/dev/null || true
 }
