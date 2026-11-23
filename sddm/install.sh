@@ -38,6 +38,7 @@ fc-cache -f >/dev/null
 
 step "4. SDDM config"
 mkdir -p /etc/sddm.conf.d
+rm -f /etc/sddm.conf.d/10-theme.conf   # qylock-sword.sh config, if switching back
 cat > /etc/sddm.conf.d/10-astronaut.conf <<EOF
 [Theme]
 Current=sddm-astronaut-theme
