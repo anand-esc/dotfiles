@@ -19,6 +19,9 @@ hl.monitor({
     mode     = power_saver() and "2880x1800@60" or "2880x1800@90",
     position = "auto",
     scale    = 1.25,
+    -- 10-bit output: the OLED panel is 10-bit; no banding in gradients and blur.
+    -- HDR switches on automatically for fullscreen HDR video (render.cm_auto_hdr).
+    bitdepth = 10,
 })
 
 -- Auto power profile on plug/unplug (performance on AC, balanced on battery)

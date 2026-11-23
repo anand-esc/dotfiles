@@ -11,6 +11,9 @@
 #      balanced / performance: 90 Hz
 #    Resolution and scale are never changed.
 set -u
+# Run in our own process group: the cleanup trap below uses `kill 0`, which signals the
+# whole group, and Hyprland starts us inside *its* group (that once killed Hyprland).
+if [[ $(ps -o pgid= $$ | tr -d ' ') != "$$" ]]; then exec setsid "$0" "$@"; fi
 AC=/sys/class/power_supply/ACAD/online
 MON="eDP-1"; RES="2880x1800"; SCALE="1.25"
 
@@ -23,7 +26,7 @@ set_refresh() {
     [[ $(powerprofilesctl get) == power-saver ]] && want=60
     cur=$(hyprctl monitors -j | python3 -I -c "import json,sys; print(round(next(m['refreshRate'] for m in json.load(sys.stdin) if m['name']=='$MON')))" 2>/dev/null)
     [[ $cur == "$want" ]] ||
-        hyprctl eval "hl.monitor({output=\"$MON\", mode=\"$RES@$want\", position=\"auto\", scale=$SCALE})" >/dev/null
+        hyprctl eval "hl.monitor({output=\"$MON\", mode=\"$RES@$want\", position=\"auto\", scale=$SCALE, bitdepth=10})" >/dev/null
 }
 
 set_profile_for_ac() {
