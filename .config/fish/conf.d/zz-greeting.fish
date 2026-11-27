@@ -1,4 +1,4 @@
-# Greeting: your name in big letters, spaced to sit evenly on top of blackfetch.
+# Greeting: your name in big letters, spaced to sit evenly on top of fastfetch (Arch logo).
 # The name is $USER in capitals; change it with:  set -U fish_banner_name "ANY NAME"
 function fish_greeting
     set -g __greeting_busy 1
@@ -13,9 +13,25 @@ function fish_greeting
     set -g __greeted 1
 end
 
+function __greeting_maxwidth
+    set -l w 0
+    for l in $argv
+        set -l v (string length --visible -- $l)
+        test $v -gt $w; and set w $v
+    end
+    echo $w
+end
+
 function __greeting_draw
-    set -l out (fastfetch -c blackarch --pipe false 2>/dev/null)
+    # big Arch logo; small logo if the window is too narrow; then trim long lines with …
+    set -l out (fastfetch --pipe false 2>/dev/null)
     or return
+    if test (__greeting_maxwidth $out) -gt $COLUMNS
+        set out (fastfetch --logo arch_small --pipe false 2>/dev/null)
+        if test (__greeting_maxwidth $out) -gt $COLUMNS
+            set out (string shorten --max $COLUMNS -- $out | string replace -r '$' '\e[0m')
+        end
+    end
     # width of the fetch block, and how far its leftmost character is indented
     set -l w 0
     set -l lead 999
