@@ -4,6 +4,7 @@ caelestia-firefox-theme
 caelestia-shell
 claude-code
 claude-desktop
+cloudflare-warp-bin
 darkly-bin
 docker-desktop
 equibop-bin
