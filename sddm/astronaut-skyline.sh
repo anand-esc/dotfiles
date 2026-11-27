@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# SDDM login screen: sddm-astronaut-theme's "Black hole" layout (login panel on the left,
-# picture on the right) with your own wallpaper and colours picked from it.
+# SDDM login screen: sddm-astronaut-theme's "Black hole" layout with your own wallpaper and
+# colours picked from it: picture across the whole screen, login panel on the left as
+# frosted glass (blurred + tinted).
 # Needs the astronaut theme installed first (sudo bash install.sh).
 #
 #   sudo bash astronaut-skyline.sh [IMAGE]     (default: ~/Pictures/Wallpapers/973967.jpg)
@@ -28,7 +29,7 @@ sed -e "s|^Background=.*|Background=\"Backgrounds/skyline.$ext\"|" \
     -e "s|^ScreenWidth=.*|ScreenWidth=\"$LAYOUT_W\"|" \
     -e "s|^ScreenHeight=.*|ScreenHeight=\"$LAYOUT_H\"|" \
     -e 's|^HeaderTextColor=.*|HeaderTextColor="#80a8f1"|' \
-    -e 's|^DateTextColor=.*|DateTextColor="#80a8f1"|' \
+    -e 's|^DateTextColor=.*|DateTextColor="#c9d8fb"|' \
     -e 's|^TimeTextColor=.*|TimeTextColor="#efd5e6"|' \
     -e 's|^FormBackgroundColor=.*|FormBackgroundColor="#141332"|' \
     -e 's|^BackgroundColor=.*|BackgroundColor="#141332"|' \
@@ -52,6 +53,9 @@ sed -e "s|^Background=.*|Background=\"Backgrounds/skyline.$ext\"|" \
     -e 's|^HoverSystemButtonsIconsColor=.*|HoverSystemButtonsIconsColor="#80a8f1"|' \
     -e 's|^HoverSessionButtonTextColor=.*|HoverSessionButtonTextColor="#80a8f1"|' \
     -e 's|^HoverVirtualKeyboardButtonTextColor=.*|HoverVirtualKeyboardButtonTextColor="#80a8f1"|' \
+    -e 's|^PartialBlur=.*|PartialBlur="true"|' \
+    -e 's|^Blur=.*|Blur="1.0"|' \
+    -e 's|^BlurMax=.*|BlurMax="48"|' \
     "$DST/Themes/black_hole.conf" > "$DST/Themes/skyline.conf"
 chmod 644 "$DST/Themes/skyline.conf"
 sed -i 's|^ConfigFile=.*|ConfigFile=Themes/skyline.conf|' "$DST/metadata.desktop"
