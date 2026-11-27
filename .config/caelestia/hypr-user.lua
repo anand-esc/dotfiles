@@ -53,3 +53,11 @@ hl.bind("SUPER + SHIFT + W", hl.dsp.global("wallfx:picker"))
 -- Apps' own "keep awake" requests go to org.freedesktop.ScreenSaver, which nothing
 -- answers on Hyprland, so the screen could dim/lock mid-video without this.
 hl.window_rule({ match = { class = ".*" }, idle_inhibit = "fullscreen" })
+
+-- Black behind everything while the desktop starts: the scheme's surface colour (light with
+-- some wallpapers) flashed near-white for ~2 s between the login screen and the wallpaper.
+hl.config({
+    misc = {
+        background_color = "rgb(000000)",
+    },
+})
