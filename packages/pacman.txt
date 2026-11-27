@@ -200,6 +200,7 @@ texinfo
 thermald
 thunar
 tldr
+torbrowser-launcher
 trash-cli
 ttf-bitstream-vera
 ttf-dejavu
