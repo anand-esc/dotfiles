@@ -2,7 +2,7 @@
 # SDDM login screen: the "sword" theme from qylock (https://github.com/Darkkal44/qylock,
 # by Darkkal44, GPL-3.0). Downloads the theme at a reviewed commit, installs it to
 # /usr/share/sddm/themes/qylock-sword and makes it the current theme.
-# Run with: sudo bash qylock-sword.sh
+# Run with: sudo bash qylock-sword.sh        (default Breeze instead: sudo bash default.sh)
 set -euo pipefail
 [[ $EUID -eq 0 ]] || { echo "Run with sudo: sudo bash $0"; exit 1; }
 

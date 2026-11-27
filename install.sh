@@ -67,6 +67,6 @@ cat <<EOF
 
 Done. Optional system-level steps (need sudo, see README):
   sudo bash $DOT/.local/share/caelestia-github-tab/install.sh   # GitHub tab + night-light pill
-  sudo bash $DOT/sddm/qylock-sword.sh                           # SDDM Sword login screen
+  sudo bash $DOT/sddm/default.sh                                # SDDM default login screen
 Then restart the shell:  caelestia shell -d   (or log out and back in)
 EOF
