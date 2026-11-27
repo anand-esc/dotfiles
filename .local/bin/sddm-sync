@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+"""sddm-sync [IMAGE] - prepare the login screen (SDDM astronaut "skyline" variant) from the
+current desktop wallpaper: a resized JPEG plus a colour scheme picked from it.
+
+Writes ~/.cache/sddm-sync/background.jpg and ~/.cache/sddm-sync/colors (KEY=#rrggbb).
+A root watcher (sddm-sync-apply, installed by sddm/astronaut-skyline.sh) copies them into
+the theme. Run automatically by sddm-sync.path whenever the wallpaper changes."""
+import colorsys
+import os
+import sys
+
+from PIL import Image
+
+HOME = os.path.expanduser("~")
+OUT = os.path.join(HOME, ".cache", "sddm-sync")
+STATE = os.path.join(HOME, ".local", "state", "caelestia", "wallpaper", "path.txt")
+
+
+def hls(c):
+    return colorsys.rgb_to_hls(*(v / 255 for v in c))
+
+
+def rgb(h, l, s):
+    return tuple(round(v * 255) for v in colorsys.hls_to_rgb(h, max(0, min(1, l)), max(0, min(1, s))))
+
+
+def mix(a, b, t):
+    return tuple(round(x + (y - x) * t) for x, y in zip(a, b))
+
+
+def hexc(c):
+    return "#%02x%02x%02x" % c
+
+
+def palette(im):
+    small = im.copy()
+    small.thumbnail((300, 300))
+    cols = [(n, c) for n, c in small.quantize(10).convert("RGB").getcolors()]
+    total = sum(n for n, _ in cols)
+    cols = [(n / total, c) for n, c in cols]
+    # accent: most saturated colour of usable brightness, weighted by how much of it there is
+    def accent_score(item):
+        share, c = item
+        h, l, s = hls(c)
+        return s * (1 - abs(l - 0.5) * 1.6) * (share ** 0.35)
+    accent = max(cols, key=accent_score)[1]
+    ah, al, as_ = hls(accent)
+    # a black-and-white picture stays neutral: don't invent colour it doesn't have
+    # judged by chroma (how far the colour is from grey, 0-255): saturation exaggerates
+    # faint tints in very dark or very light colours
+    grey = max(max(c) - min(c) for _, c in cols if _ > 0.02) < 45
+    def sat(x, floor):
+        return min(x, 0.1) if grey else max(x, floor)
+    # panel: the darkest common colour, pushed dark and tinted toward its own hue
+    dark = min(cols, key=lambda it: hls(it[1])[1] - it[0] * 0.3)[1]
+    dh, dl, ds = hls(dark)
+    panel = rgb(dh, 0.13, min(0.6, sat(ds, 0.35)))
+    # text: the lightest common colour, kept very light
+    light = max(cols, key=lambda it: hls(it[1])[1] + it[0] * 0.2)[1]
+    lh, ll, ls = hls(light)
+    text = rgb(lh, max(0.88, ll), min(ls, 0.6))
+    button = rgb(ah, 0.42 if grey else 0.5, sat(as_, 0.65))
+    hover = rgb(ah, 0.72, sat(as_, 0.75))
+    date = rgb(ah, 0.86, sat(as_, 0.8))
+    field = mix(panel, button, 0.18)
+    drop = rgb(dh, 0.09, min(0.6, sat(ds, 0.35)))
+    return {
+        "HeaderTextColor": hover, "DateTextColor": date, "TimeTextColor": text,
+        "FormBackgroundColor": panel, "BackgroundColor": panel, "DimBackgroundColor": panel,
+        "LoginFieldBackgroundColor": field, "PasswordFieldBackgroundColor": field,
+        "LoginFieldTextColor": text, "PasswordFieldTextColor": text,
+        "UserIconColor": date, "PasswordIconColor": date, "SystemButtonsIconsColor": date,
+        "SessionButtonTextColor": date, "VirtualKeyboardButtonTextColor": date,
+        "LoginButtonBackgroundColor": button, "DropdownSelectedBackgroundColor": button,
+        "DropdownBackgroundColor": drop, "HighlightBackgroundColor": date,
+        "HighlightBorderColor": hover, "HoverUserIconColor": hover, "HoverPasswordIconColor": hover,
+        "HoverSystemButtonsIconsColor": hover, "HoverSessionButtonTextColor": hover,
+        "HoverVirtualKeyboardButtonTextColor": hover,
+    }
+
+
+def main():
+    src = sys.argv[1] if len(sys.argv) > 1 else open(STATE).read().strip()
+    im = Image.open(src)
+    im.draft("RGB", (3840, 3840))
+    im = im.convert("RGB")
+    im.thumbnail((3840, 3840), Image.LANCZOS)   # plenty for a 2880x1800 panel, loads fast
+    os.makedirs(OUT, exist_ok=True)
+    tmp = os.path.join(OUT, ".background.jpg.tmp")
+    im.save(tmp, "JPEG", quality=92, optimize=True)
+    os.replace(tmp, os.path.join(OUT, "background.jpg"))
+    tmp = os.path.join(OUT, ".colors.tmp")
+    with open(tmp, "w") as f:
+        for k, v in palette(im).items():
+            f.write(f"{k}={hexc(v)}\n")
+    os.replace(tmp, os.path.join(OUT, "colors"))    # last: the root watcher triggers on this
+    print(f"sddm-sync: login screen prepared from {os.path.basename(src)}")
+
+
+if __name__ == "__main__":
+    main()

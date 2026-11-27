@@ -37,6 +37,7 @@ chmod -R u=rwX,go=rX /usr/share/fonts/sddm-astronaut
 fc-cache -f >/dev/null
 
 step "4. SDDM config"
+systemctl disable --now sddm-sync.path 2>/dev/null || true   # login screen no longer follows the wallpaper
 mkdir -p /etc/sddm.conf.d
 rm -f /etc/sddm.conf.d/10-theme.conf   # qylock-sword.sh config, if switching back
 cat > /etc/sddm.conf.d/10-astronaut.conf <<EOF

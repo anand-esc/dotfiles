@@ -1,0 +1,9 @@
+[Unit]
+Description=Prepare the login screen when the wallpaper changes
+
+[Path]
+PathChanged=%h/.local/state/caelestia/wallpaper/path.txt
+Unit=sddm-sync.service
+
+[Install]
+WantedBy=default.target

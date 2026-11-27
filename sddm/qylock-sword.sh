@@ -42,6 +42,7 @@ cp "$tmp/LICENSE" "$DEST/LICENSE"
 chmod -R a+rX "$DEST"
 
 echo "==> Making it the current theme"
+systemctl disable --now sddm-sync.path 2>/dev/null || true   # login screen no longer follows the wallpaper
 mkdir -p "$CONF_DIR"
 # the old astronaut config set a 1.5x scale and an on-screen keyboard; this theme
 # scales itself to the screen and needs neither

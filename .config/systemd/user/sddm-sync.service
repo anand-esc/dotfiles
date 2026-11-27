@@ -1,0 +1,7 @@
+[Unit]
+Description=Prepare the login screen from the current wallpaper (resized picture + colours)
+
+[Service]
+Type=oneshot
+Nice=15
+ExecStart=%h/.local/bin/sddm-sync

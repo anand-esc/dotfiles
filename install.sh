@@ -27,6 +27,9 @@ LINKS=(
     .local/bin/namebanner
     .config/systemd/user/wallfx-watch.path
     .config/systemd/user/wallfx-watch.service
+    .config/systemd/user/sddm-sync.path
+    .config/systemd/user/sddm-sync.service
+    .local/bin/sddm-sync
 )
 
 if [[ ${1:-} == --packages ]]; then
