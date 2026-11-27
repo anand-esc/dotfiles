@@ -2,7 +2,7 @@
 # SDDM login screen: the "sword" theme from qylock (https://github.com/Darkkal44/qylock,
 # by Darkkal44, GPL-3.0). Downloads the theme at a reviewed commit, installs it to
 # /usr/share/sddm/themes/qylock-sword and makes it the current theme.
-# Run with: sudo bash qylock-sword.sh        (switch back: sudo bash install.sh)
+# Run with: sudo bash qylock-sword.sh
 set -euo pipefail
 [[ $EUID -eq 0 ]] || { echo "Run with sudo: sudo bash $0"; exit 1; }
 
@@ -42,10 +42,8 @@ cp "$tmp/LICENSE" "$DEST/LICENSE"
 chmod -R a+rX "$DEST"
 
 echo "==> Making it the current theme"
-systemctl disable --now sddm-sync.path 2>/dev/null || true   # login screen no longer follows the wallpaper
 mkdir -p "$CONF_DIR"
-# the old astronaut config set a 1.5x scale and an on-screen keyboard; this theme
-# scales itself to the screen and needs neither
+# remove the old astronaut-theme config (1.5x scale, on-screen keyboard), if present
 rm -f "$CONF_DIR/10-astronaut.conf"
 cat > "$CONF_DIR/10-theme.conf" <<'EOF'
 [Theme]

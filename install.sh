@@ -27,9 +27,6 @@ LINKS=(
     .local/bin/namebanner
     .config/systemd/user/wallfx-watch.path
     .config/systemd/user/wallfx-watch.service
-    .config/systemd/user/sddm-sync.path
-    .config/systemd/user/sddm-sync.service
-    .local/bin/sddm-sync
 )
 
 if [[ ${1:-} == --packages ]]; then
@@ -70,6 +67,6 @@ cat <<EOF
 
 Done. Optional system-level steps (need sudo, see README):
   sudo bash $DOT/.local/share/caelestia-github-tab/install.sh   # GitHub tab + night-light pill
-  sudo bash $DOT/sddm/install.sh                                # SDDM jake login screen
+  sudo bash $DOT/sddm/qylock-sword.sh                           # SDDM Sword login screen
 Then restart the shell:  caelestia shell -d   (or log out and back in)
 EOF
