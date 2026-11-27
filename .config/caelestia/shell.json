@@ -126,5 +126,8 @@
     },
     "lock": {
         "enableFprint": false
+    },
+    "border": {
+        "thickness": 2
     }
 }
