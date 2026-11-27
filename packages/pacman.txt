@@ -44,8 +44,8 @@ endeavouros-keyring
 endeavouros-mirrorlist
 eos-dracut
 ethtool
-ex-vi-compat
 exfatprogs
+ex-vi-compat
 eza
 f2fs-tools
 fastfetch
@@ -64,9 +64,9 @@ gnome-keyring
 grub
 gst-libav
 gst-plugin-pipewire
-gst-plugin-va
 gst-plugins-bad
 gst-plugins-ugly
+gst-plugin-va
 gwenview
 haruna
 haveged
@@ -79,6 +79,7 @@ hyprshutdown
 hyprsunset
 inetutils
 inotify-tools
+intel-compute-runtime
 intel-media-driver
 intel-ucode
 inxi
@@ -89,9 +90,9 @@ jq
 kate
 kcalc
 kde-cli-tools
-kde-gtk-config
 kdeconnect
 kdegraphics-thumbnailers
+kde-gtk-config
 kdenetwork-filesharing
 kdeplasma-addons
 kimageformats
@@ -170,8 +171,8 @@ plasma-workspace
 plocate
 polkit-gnome
 poppler-glib
-power-profiles-daemon
 powerdevil
+power-profiles-daemon
 print-manager
 python
 python-defusedxml
@@ -184,11 +185,11 @@ reflector
 rkhunter
 rsync
 rtkit
-s-nail
 sddm
 sddm-kcm
 sg3_utils
 smartmontools
+s-nail
 sof-firmware
 spectacle
 starship

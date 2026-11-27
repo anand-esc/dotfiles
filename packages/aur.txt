@@ -16,3 +16,4 @@ realesrgan-ncnn-vulkan-bin
 spicetify-cli
 spicetify-marketplace-bin
 spotify
+tlauncher-installer
